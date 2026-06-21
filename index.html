@@ -142,6 +142,14 @@
     .ovod-embed{ position:relative; width:100%; aspect-ratio:16/9; background:#000; }
     .ovod-embed iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; }
     .ovod-title{ padding:12px 14px; font-weight:700; color:var(--text); text-align:center; font-size:14px; }
+    /* ▶ 미리보기 카드(곡 등록 전 표시) */
+    .vod-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:13px; }
+    .vod-card{ background:var(--card); border:1.5px solid var(--line); border-radius:16px; overflow:hidden; transition:transform .15s; }
+    .vod-card:hover{ transform:translateY(-3px); }
+    .vod-thumb{ position:relative; aspect-ratio:16/9; background:linear-gradient(135deg,var(--main-dark),var(--main)); display:flex; align-items:center; justify-content:center; }
+    .vod-thumb .play{ width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; color:var(--main-dark); font-size:15px; padding-left:3px; box-shadow:0 4px 14px rgba(0,0,0,.2); }
+    .vod-thumb .tag{ position:absolute; top:8px; left:8px; background:rgba(0,0,0,.45); color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:6px; letter-spacing:.5px; }
+    .vod-title{ padding:10px 13px; font-size:13.5px; font-weight:700; }
 
     /* 관련 링크 */
     .links{ display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
@@ -213,6 +221,10 @@
     body.dark .panel .sch-item .d{ background:rgba(255,255,255,.28); color:#fff; }
     body.dark .panel .ovod-card{ background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.24); }
     body.dark .panel .ovod-title{ color:#fff; }
+    body.dark .panel .vod-card{ background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.24); }
+    body.dark .panel .vod-thumb{ background:linear-gradient(135deg,#c96788,#e88aa8); }
+    body.dark .panel .vod-thumb .play{ background:rgba(255,255,255,.95); color:#d96f93; }
+    body.dark .panel .vod-title{ color:#fff; }
     body.dark .panel .link-btn{ border-color:rgba(255,255,255,.45); color:#fff; }
     body.dark .panel .link-btn:hover{ background:rgba(255,255,255,.18); }
   </style>
@@ -322,10 +334,15 @@
         </div>
       </div>
 
-      <!-- 다시보기(VOD) — 관리자 "오리지널 곡"에 VOD ID 넣으면 자동 임베드, 없으면 자동 숨김 -->
-      <div class="panel full" id="songs-card" style="display:none">
-        <div class="sect-title">🎬 하나비 다시보기 (VOD)</div>
-        <div class="ovod-grid" id="ovod-grid"></div>
+      <!-- 다시보기·클립 — ▶ 미리보기 카드 기본 표시. 관리자 프로필 탭 "다시보기·클립"에 ID 넣으면 실제 영상으로 자동 교체 -->
+      <div class="panel full" id="songs-card">
+        <div class="sect-title">🎬 하나비 다시보기 · 클립</div>
+        <div class="ovod-grid" id="ovod-grid">
+          <div class="vod-card"><div class="vod-thumb"><span class="tag">SOOP VOD</span><span class="play">▶</span></div><div class="vod-title">🎤 시그송 「당신의 연인이 되고 싶어」</div></div>
+          <div class="vod-card"><div class="vod-thumb"><span class="tag">SOOP VOD</span><span class="play">▶</span></div><div class="vod-title">🎮 마인크래프트 건축 방송</div></div>
+          <div class="vod-card"><div class="vod-thumb"><span class="tag">SOOP VOD</span><span class="play">▶</span></div><div class="vod-title">🦋 삐용이들과 깊은 밤 저챗</div></div>
+          <div class="vod-card"><div class="vod-thumb"><span class="tag">SOOP VOD</span><span class="play">▶</span></div><div class="vod-title">🎮 롤 랭크 가는 날</div></div>
+        </div>
       </div>
 
       <!-- 관련 링크 (link-soop / link-fancim / link-mfancim) -->
@@ -439,21 +456,20 @@
     }
   }
 
-  // 오리지널 곡(VOD) — songs-card / ovod-grid 가 있을 때만, DB 없으면 조용히 숨김
+  // 오리지널 곡(VOD) — 등록되면 ▶카드를 실제 임베드로 교체. 없으면 ▶카드 유지
   async function loadOriginalSongs() {
     const card = document.getElementById('songs-card');
     const grid = document.getElementById('ovod-grid');
     if (!card || !grid) return;
-    if (typeof fetchAll !== 'function') { card.style.display = 'none'; return; }
+    if (typeof fetchAll !== 'function') return; // DB 미연결 → ▶ 미리보기 카드 그대로
     try {
       const list = await fetchAll('original_songs', { order: 'id', asc: false });
-      if (!list || !list.length) { card.style.display = 'none'; return; }
-      card.style.display = '';
+      if (!list || !list.length) return; // 등록된 곡 없음 → ▶ 미리보기 카드 그대로
       grid.innerHTML = list.map(s => {
         const vid = (s.vod_id || '').trim();
         return `<div class="ovod-card"><div class="ovod-embed"><iframe src="https://vod.sooplive.co.kr/player/${vid}/embed?showChat=false&autoPlay=false&mutePlay=false" frameborder="0" allowfullscreen scrolling="no"></iframe></div><div class="ovod-title">${(s.title || '').replace(/</g, '&lt;')}</div></div>`;
       }).join('');
-    } catch (e) { console.log('VOD load skip', e && e.message); card.style.display = 'none'; }
+    } catch (e) { console.log('VOD load skip', e && e.message); }
   }
 
   load();
