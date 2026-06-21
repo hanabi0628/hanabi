@@ -54,7 +54,7 @@
 
     /* 떠다니는 입자(연출) */
     #fx{ position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
-    #fx span{ position:absolute; bottom:-40px; color:var(--main); opacity:0; animation:rise linear infinite; }
+    #fx .fxfb{ position:absolute; bottom:-40px; color:var(--main); opacity:0; animation:rise linear infinite; }
     @keyframes rise{ 0%{transform:translateY(0) rotate(0);opacity:0;} 10%{opacity:.40;} 90%{opacity:.40;} 100%{transform:translateY(-106vh) rotate(40deg);opacity:0;} }
     @media (prefers-reduced-motion: reduce){ #fx{display:none;} }
 
@@ -553,7 +553,7 @@
   var fx = document.getElementById('fx');
   var g = ['♡','✿','♡','❀','♡','✿'];
   if (fx) for (var i=0;i<15;i++){
-    var s=document.createElement('span'); s.textContent=g[i%g.length];
+    var s=document.createElement('span'); s.className='fxfb'; s.textContent=g[i%g.length];
     s.style.left=Math.random()*100+'%'; s.style.fontSize=(11+Math.random()*16)+'px';
     s.style.animationDuration=(9+Math.random()*9)+'s'; s.style.animationDelay=(-Math.random()*14)+'s';
     fx.appendChild(s);
