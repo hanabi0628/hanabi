@@ -152,8 +152,8 @@
     .vod-title{ padding:10px 13px; font-size:13.5px; font-weight:700; }
 
     /* 관련 링크 */
-    .links{ display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
-    .link-btn{ display:flex; align-items:center; gap:7px; justify-content:center; border:1.5px solid var(--main-light); border-radius:12px; padding:12px; font-weight:700; font-size:13.5px; color:var(--main-dark); transition:all .15s; }
+    .links{ display:flex; flex-wrap:wrap; gap:9px; justify-content:center; }
+    .link-btn{ display:flex; align-items:center; gap:7px; justify-content:center; flex:1 1 0; min-width:0; border:1.5px solid var(--main-light); border-radius:12px; padding:12px; font-weight:700; font-size:13.5px; color:var(--main-dark); transition:all .15s; }
     .link-btn:hover{ background:var(--main-light); }
 
     /* ── 회원증 카드 ── */
@@ -187,7 +187,7 @@
       .e-id{ text-align:left; min-width:0; }
       .e-photo{ width:122px; height:122px; }
       .ovod-grid{ grid-template-columns:1fr; }
-      .links{ grid-template-columns:repeat(3,1fr); }
+      .link-btn{ font-size:12px; padding:11px 5px; gap:4px; }
     }
 
     /* ── 문의 모달 ── */
@@ -340,8 +340,6 @@
         <div class="ovod-grid" id="ovod-grid">
           <div class="vod-card"><div class="vod-thumb"><span class="tag">SOOP VOD</span><span class="play">▶</span></div><div class="vod-title">🎤 시그송 「당신의 연인이 되고 싶어」</div></div>
           <div class="vod-card"><div class="vod-thumb"><span class="tag">SOOP VOD</span><span class="play">▶</span></div><div class="vod-title">🎮 마인크래프트 건축 방송</div></div>
-          <div class="vod-card"><div class="vod-thumb"><span class="tag">SOOP VOD</span><span class="play">▶</span></div><div class="vod-title">🦋 삐용이들과 깊은 밤 저챗</div></div>
-          <div class="vod-card"><div class="vod-thumb"><span class="tag">SOOP VOD</span><span class="play">▶</span></div><div class="vod-title">🎮 롤 랭크 가는 날</div></div>
         </div>
       </div>
 
@@ -440,12 +438,10 @@
       if (el) { const v = (d[id] || '').trim(); el.textContent = v; el.style.display = v ? '' : 'none'; }
     });
 
-    // 관련 링크 (값 있으면 href 연결, 없으면 비활성)
-    [['link-soop'], ['link-fancim'], ['link-mfancim']].forEach(([id]) => {
+    // 관련 링크 — 셋 다 동일하게 표시 (주소 없으면 #, 채우면 연결)
+    ['link-soop', 'link-fancim', 'link-mfancim'].forEach(id => {
       const el = document.getElementById(id); if (!el) return;
-      const v = (d[id] || '').trim();
-      if (v) { el.href = v; el.style.opacity = ''; el.style.pointerEvents = ''; }
-      else { el.href = '#'; el.style.opacity = '.5'; el.style.pointerEvents = 'none'; }
+      el.href = (d[id] || '').trim() || '#';
     });
 
     // 방송 요일 (days → 동그라미 점등)
@@ -533,7 +529,45 @@
     if (el) el.textContent = d === 0 ? '🎂 생일 D-DAY!' : '🎂 생일까지 D-' + d;
   })();
 </script>
-<!-- 공통 연출(입자·클릭·기울기·프사톡). 모양은 fx.js 상단 설정에서 -->
+<!-- 공통 연출(가이드 §9): 입자·클릭 톡·카드 기울기·프사 톡·프사 바운스. 모양은 fx.js 상단 4줄 -->
 <script src="fx.js"></script>
+<!-- fx.js가 없을 때(단독 미리보기)만 도는 인라인 폴백 — 효과 동일 -->
+<script>
+(function(){
+  if (typeof window.fxHearts === 'function') return;   // fx.js 로드됨 → 폴백 불필요
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var fx = document.getElementById('fx');
+  var g = ['♡','✿','♡','❀','♡','✿'];
+  if (fx) for (var i=0;i<15;i++){
+    var s=document.createElement('span'); s.textContent=g[i%g.length];
+    s.style.left=Math.random()*100+'%'; s.style.fontSize=(11+Math.random()*16)+'px';
+    s.style.animationDuration=(9+Math.random()*9)+'s'; s.style.animationDelay=(-Math.random()*14)+'s';
+    fx.appendChild(s);
+  }
+  function pop(x,y,size){
+    var b=document.createElement('span'); b.textContent='🦋';
+    var dx=(Math.random()*60-30), rot=(Math.random()*44-22);
+    b.style.cssText='position:fixed;left:'+x+'px;top:'+y+'px;font-size:'+(size||24)+'px;pointer-events:none;z-index:999;transform:translate(-50%,-50%);transition:transform .9s ease-out,opacity .9s ease-out;will-change:transform,opacity;';
+    document.body.appendChild(b);
+    requestAnimationFrame(function(){ b.style.transform='translate(calc(-50% + '+dx+'px),-180%) rotate('+rot+'deg)'; b.style.opacity='0'; });
+    setTimeout(function(){ b.remove(); }, 900);
+  }
+  function bounce(el){
+    if (el && el.animate) el.animate(
+      [{transform:'scale(1)'},{transform:'scale(.88)'},{transform:'scale(1.06)'},{transform:'scale(1)'}],
+      { duration:420, easing:'ease-out' });
+  }
+  document.addEventListener('click', function(e){
+    if (e.target.closest('input, textarea')) return;
+    if (e.target.closest('#avatarWrap')) return;   // 프사는 아래 핸들러로
+    pop(e.clientX, e.clientY, 22);
+  });
+  var av = document.getElementById('avatarWrap');
+  if (av) av.addEventListener('click', function(e){
+    bounce(av);                                          // 프사 통통 튀기
+    for (var k=0;k<7;k++) pop(e.clientX, e.clientY, 18+Math.random()*14);   // + 🦋 펑
+  });
+})();
+</script>
 </body>
 </html>
